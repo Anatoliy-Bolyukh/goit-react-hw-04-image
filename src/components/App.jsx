@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 
 import TakePhotos from './API/API';
@@ -8,71 +8,60 @@ import Button from './Button/Button';
 import Modal from './Modal/Modal';
 import Loader from './Loader/Loader';
 
-export default class App extends Component {
-  state = {
-    gallery: '',
-    images: [],
-    page: 1,
-    modalGallery: null,
-    tags: '',
-    isModalOpen: false,
-    loading: false,
+export default function App() {
+  const [gallery, setGallery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [modalGallery, setModalGallery] = useState(null);
+  const [tags, setTags] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleFormSubmit = value => {
+    setGallery(value);
+    setPage(1);
   };
 
-  handleFormSubmit = gallery => {
-    this.setState({ gallery, page: 1 });
-  };
+  useEffect(() => {
+    if (gallery === '') return;
+    setLoading(true);
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.gallery !== this.state.gallery ||
-      prevState.page !== this.state.page
-    ) {
-
-    this.setState({loading: true})
-
-      const array = await TakePhotos(this.state.gallery, this.state.page);
-
-      if (this.state.page !== 1) {
-        this.setState(prevState => ({
-          images: [...prevState.images, ...array], loading: false
-        }));
-      } else {
-        this.setState({ images: [...array], loading: false });
+    TakePhotos(gallery, page).then(array => {
+      try {
+        if (page === 1) {
+          setImages(array);
+        } else {
+          setImages(set => [...set, ...array]);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
       }
-    }
-  }
+    });
+  }, [gallery, page]);
 
-  changePage = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const changePage = () => setPage(set => set + 1);
+
+  const openModal = (modalGallery, tags) => {
+    setIsModalOpen(!isModalOpen);
+    setModalGallery(modalGallery);
+    setTags(tags);
   };
 
-  openModal = (modalGallery, tags) => {
-    this.setState(prevState => ({
-      isModalOpen: !prevState.isModalOpen,
-      modalGallery,
-      tags,
-    }));
-  };
+  return (
+    <>
+      <Searchbar onSubmit={handleFormSubmit} />
+      <ImageGallery openModal={openModal} gallery={images} />
+      {images.length > 1 && (
+        <Button buttonTitle="Load more" changePage={changePage} />
+      )}
+      {isModalOpen && (
+        <Modal openModal={openModal} imgUrl={modalGallery} imgTag={tags} />
+      )}
+      {loading && <Loader />}
 
-  render() {
-    return (
-      <>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        <ImageGallery openModal={this.openModal} gallery={this.state.images} />
-        {this.state.images.length > 1 && (
-          <Button buttonTitle="Load more" changePage={this.changePage}/>
-        )}
-        {this.state.isModalOpen &&
-        <Modal
-          openModal={this.openModal}
-          imgUrl={this.state.modalGallery}
-          imgTag={this.state.tags}
-          />}
-        {this.state.loading && <Loader/>}
-        
-        <ToastContainer autoClose={3000} />
-      </>
-    );
-  }
+      <ToastContainer autoClose={3000} />
+    </>
+  );
 }

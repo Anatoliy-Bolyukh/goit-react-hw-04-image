@@ -1,34 +1,29 @@
-// import { editableInputTypes } from '@testing-library/user-event/dist/utils';
-import { Component } from 'react';
+import PropTypes from 'prop-types';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
-  import 'react-toastify/dist/ReactToastify.css';
+import 'react-toastify/dist/ReactToastify.css';
 
-class Seachbar extends Component {
-  state = {
-    gallery: '',
+function Seachbar({onSubmit}) {
+  const [gallery, setGallery] = useState('')
+
+  const handleNameChange = event => {
+    setGallery( event.currentTarget.value.toLowerCase())
   };
 
-  handleNameChange = event => {
-    this.setState({ gallery: event.currentTarget.value.toLowerCase() });
-  };
-
-  handleSubmite = event => {
+  const handleSubmite = event => {
     event.preventDefault();
 
-    if (this.state.gallery.trim() === '') {
+    if (gallery.trim() === '') {
       toast('🦄 Введіть дані!');
       return;
     }
-    this.props.onSubmit(this.state.gallery);
-    this.setState({ gallery: '' });
-
-
+    onSubmit(gallery);
+    setGallery('');
   };
 
-  render() {
     return (
       <header className="searchbar">
-        <form className="searchForm" onSubmit={this.handleSubmite}>
+        <form className="searchForm" onSubmit={handleSubmite}>
           <button type="submit" className="button">
             <span className="searchFormButtonLabel">Search</span>
           </button>
@@ -38,13 +33,16 @@ class Seachbar extends Component {
               autoComplete="off"
               autoFocus
               placeholder="Search images and photos"
-              value={this.gallery}
-              onChange={this.handleNameChange}
+              value={gallery}
+              onChange={handleNameChange}
             />
         </form>
       </header>
     );
   }
+
+Seachbar.propTypes = {
+  onSubmit: PropTypes.func
 }
 
 export default Seachbar;
